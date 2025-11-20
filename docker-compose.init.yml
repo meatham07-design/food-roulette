@@ -1,0 +1,24 @@
+# Database initialization script
+# Bu dosya database'in doğru oluşturulmasını sağlar
+
+services:
+  postgres-init:
+    image: postgres:15-alpine
+    container_name: yemek-ruleti-db-init
+    environment:
+      POSTGRES_USER: yemekruleti
+      POSTGRES_PASSWORD: yemekruleti123
+      POSTGRES_DB: yemek_ruleti
+    command: ["postgres"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - yemek-ruleti-network
+
+volumes:
+  postgres_data:
+
+networks:
+  yemek-ruleti-network:
+    driver: bridge
+

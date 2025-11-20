@@ -1,0 +1,52 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: yemek-ruleti-db
+    environment:
+      POSTGRES_USER: yemekruleti
+      POSTGRES_PASSWORD: yemekruleti123
+      POSTGRES_DB: yemek_ruleti
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yemekruleti -d yemek_ruleti"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yemek-ruleti-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yemek-ruleti-backend
+    environment:
+      DATABASE_URL: postgresql://yemekruleti:yemekruleti123@postgres:5432/yemek_ruleti?schema=public
+      PORT: 3001
+      GOOGLE_PLACES_API_KEY: "AIzaSyDUVbsM9I9JFLASREjqznFBN3AGDk7CL-4"
+      CORS_ORIGIN: http://localhost:19006,http://localhost:19000,http://localhost:19001
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "echo 'Waiting for database...' && sleep 15 && npx prisma db push --accept-data-loss && npx prisma generate && npm run dev"
+    networks:
+      - yemek-ruleti-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  yemek-ruleti-network:
+    driver: bridge

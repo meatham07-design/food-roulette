@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Yemek Ruleti",
+    "slug": "yemek-ruleti",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yemekruleti.app",
+      "buildNumber": "1",
+      "config": {
+        "googleMapsApiKey": "YOUR_KEY_HERE"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Bu uygulama yakınındaki restoranları bulmak için konum bilginize ihtiyaç duyar.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Bu uygulama yakınındaki restoranları bulmak için konum bilginize ihtiyaç duyar."
+      }
+    },
+
+    "android": {
+      "package": "com.yemekruleti.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#FF6B6B"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_KEY_HERE"
+        }
+      }
+    },
+
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Bu uygulama yakınındaki restoranları bulmak için konum bilginize ihtiyaç duyar."
+        }
+      ]
+    ]
+  }
+}

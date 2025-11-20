@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  address     String
+  latitude    Float
+  longitude   Float
+  phone       String?
+  rating      Float?
+  priceLevel  Int?     // 1-4 (1=cheap, 4=expensive)
+  website     String?
+  placeId     String   @unique // Google Places ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categories  RestaurantCategory[]
+  photos      String[] // Array of photo URLs
+
+  @@index([latitude, longitude])
+  @@index([placeId])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  nameEn      String?  // English name for API compatibility
+  icon        String?  // Icon name or emoji
+  createdAt   DateTime @default(now())
+
+  restaurants RestaurantCategory[]
+}
+
+model RestaurantCategory {
+  id           String     @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, categoryId])
+  @@index([restaurantId])
+  @@index([categoryId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
