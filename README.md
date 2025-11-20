@@ -1,175 +1,253 @@
-# 🍽️ Yemek Ruleti
+# 🍽️ Food Roulette
 
-Yakınındaki restoranları bulup rulet çevirerek ne yiyeceğine karar veren mobil uygulama.
+A mobile application that helps you decide what to eat by finding nearby restaurants and spinning a roulette wheel.
 
-## 🚀 Özellikler
+## 🚀 Features
 
-- 📍 Konum bazlı restoran arama
-- 🎯 Mesafe filtresi (500m, 1km, 2km, 5km)
-- 🍕 Kategori bazlı filtreleme
-- 🎰 İnteraktif rulet animasyonu
-- ⭐ Restoran detayları (rating, mesafe, fotoğraflar)
+- 📍 **Location-based restaurant search** - Find restaurants near you
+- 🎯 **Distance filter** - Customizable radius (0-5km) with slider
+- 🍕 **Category filtering** - Filter by multiple food categories (Pizza, Turkish, Italian, etc.)
+- 🎰 **Interactive roulette wheel** - Beautiful animated wheel with fair random selection
+- ⭐ **Restaurant details** - Ratings, photos, distance, and address
+- 🎉 **Confetti effects** - Celebration when winner is selected
+- 📳 **Haptic feedback** - Tactile feedback during spin and on win
+- ❤️ **Favorites** - Save your favorite restaurants
+- 📜 **History** - View past roulette results
+- 🗺️ **Map integration** - View restaurant location and get directions
+- 📤 **Share** - Share your winning restaurant with friends
 
-## 📱 Platform Desteği
+## 📱 Platform Support
 
-✅ **iOS** (iPhone & iPad) - App Store'a yayınlanabilir  
-✅ **Android** (Telefon & Tablet) - Google Play'e yayınlanabilir  
-✅ **Web** (isteğe bağlı)
+✅ **iOS** (iPhone & iPad) - Ready for App Store  
+✅ **Android** (Phone & Tablet) - Ready for Google Play
 
-Uygulama Expo kullanılarak geliştirilmiştir, bu sayede tek bir kod tabanından hem iOS hem Android için build alınabilir. Detaylı yayınlama rehberi için [DEPLOYMENT.md](./DEPLOYMENT.md) dosyasına bakın.
+Built with Expo, allowing you to build for both iOS and Android from a single codebase.
 
-## 🐳 Docker ile Hızlı Başlangıç (Önerilen)
+## 🎨 Screenshots
 
-En kolay yöntem! Tüm servisleri tek komutla başlatın:
+- **Home Screen**: Select distance and categories
+- **Roulette Screen**: Spin the wheel to select a restaurant
+- **History Screen**: View past selections
+- **Favorites Screen**: Manage your favorite restaurants
+- **Map Screen**: View restaurant location
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Node.js** with **Express**
+- **TypeScript** for type safety
+- **Prisma ORM** with **PostgreSQL**
+- **Google Places API** for restaurant data
+
+### Frontend
+- **React Native** with **Expo**
+- **TypeScript** for type safety
+- **React Navigation** for navigation
+- **AsyncStorage** for local data persistence
+- **Expo Haptics** for haptic feedback
+- **React Native Confetti Cannon** for celebrations
+- **Expo Linear Gradient** for beautiful gradients
+
+### Infrastructure
+- **Docker** & **Docker Compose** for containerization
+- **PostgreSQL** database
+
+## 📋 Prerequisites
+
+- **Docker** and **Docker Compose** (recommended)
+- OR **Node.js 18+** and **PostgreSQL 14+** (manual setup)
+- **Google Places API Key** ([Get it here](https://console.cloud.google.com/))
+
+## 🐳 Quick Start with Docker (Recommended)
+
+The easiest way to get started:
 
 ```bash
-# Google Places API key'i ayarlayın
+# 1. Set your Google Places API key
 export GOOGLE_PLACES_API_KEY=your_api_key_here
 
-# Tüm servisleri başlat (PostgreSQL + Backend + Frontend)
+# 2. Start all services (PostgreSQL + Backend + Frontend)
 docker-compose up --build
+
+# 3. Access the app
+# - Backend API: http://localhost:3001
+# - Frontend: Scan QR code with Expo Go app
+# - Database: localhost:5432
 ```
 
-Detaylı Docker rehberi için [DOCKER.md](./DOCKER.md) dosyasına bakın.
+## 📦 Manual Installation
 
-## 📋 Gereksinimler
+### Backend Setup
 
-### Docker ile (Önerilen)
-- Docker
-- Docker Compose
-- Google Places API Key
-
-### Manuel Kurulum
-- Node.js 18+
-- PostgreSQL 14+
-- Google Places API Key
-- Expo CLI (mobil geliştirme için)
-
-## 🛠️ Kurulum
-
-### 🐳 Docker ile (En Kolay)
-
-1. **Google Places API Key'i ayarlayın:**
+1. **Navigate to backend directory:**
    ```bash
-   export GOOGLE_PLACES_API_KEY=your_api_key_here
+   cd backend
    ```
 
-2. **Tüm servisleri başlatın:**
+2. **Install dependencies:**
    ```bash
-   docker-compose up --build
+   npm install
    ```
 
-3. **Uygulamaya erişin:**
-   - Backend: http://localhost:3001
-   - Frontend: Terminal'de QR kodu görünecek
-   - Database: localhost:5432
+3. **Create `.env` file:**
+   ```bash
+   cp env.example .env
+   ```
 
-Detaylı bilgi için [DOCKER.md](./DOCKER.md) dosyasına bakın.
+4. **Configure `.env`:**
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/food_roulette"
+   PORT=3001
+   GOOGLE_PLACES_API_KEY=your_api_key_here
+   CORS_ORIGIN=http://localhost:19006
+   ```
 
-### 📦 Manuel Kurulum
+5. **Setup database:**
+   ```bash
+   npx prisma migrate dev
+   npx prisma generate
+   ```
 
-#### Backend
+6. **Start backend:**
+   ```bash
+   npm run dev
+   ```
 
-1. Backend klasörüne gidin:
-```bash
-cd backend
-```
+### Frontend Setup
 
-2. Bağımlılıkları yükleyin:
-```bash
-npm install
-```
+1. **Navigate to frontend directory:**
+   ```bash
+   cd frontend
+   ```
 
-3. `.env` dosyası oluşturun:
-```bash
-cp env.example .env
-```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-4. `.env` dosyasını düzenleyin:
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/yemek_ruleti"
+3. **Start Expo:**
+   ```bash
+   npm start
+   ```
+
+4. **Run on device:**
+   - Scan QR code with **Expo Go** app (iOS/Android)
+   - Or press `i` for iOS simulator / `a` for Android emulator
+
+## 📱 Usage
+
+1. **Open the app** and grant location permissions
+2. **Select distance** using the slider (0-5km) or preset buttons
+3. **Choose categories** (optional) - Select one or more food categories
+4. **Find restaurants** - Tap "Restoranları Bul" to search
+5. **Spin the wheel** - Tap the center button or "Ruleti Çevir!" to spin
+6. **View result** - See the winning restaurant with details
+7. **Take action** - Add to favorites, view on map, or share
+
+## 🗄️ Database Schema
+
+- **Restaurant**: Restaurant information (name, address, coordinates, rating, photos)
+- **Category**: Food categories (Pizza, Turkish, Italian, etc.)
+- **RestaurantCategory**: Many-to-many relationship between restaurants and categories
+
+## 🔧 API Endpoints
+
+### Restaurants
+- `GET /api/restaurants/nearby?lat={lat}&lng={lng}&radius={radius}&categoryIds={ids}` - Search nearby restaurants
+- `GET /api/restaurants` - Get filtered restaurants
+- `GET /api/restaurants/:id` - Get restaurant details
+
+### Categories
+- `GET /api/categories` - Get all categories
+
+## 🎯 Features in Detail
+
+### Roulette Wheel
+- Fair random selection algorithm
+- Beautiful gradient segments
+- Smooth animations
+- Visual feedback with confetti and haptics
+
+### History & Favorites
+- Local storage using AsyncStorage
+- No backend dependency
+- Persistent across app restarts
+- Easy management (add/remove favorites)
+
+### Map Integration
+- Opens native map apps (Google Maps / Apple Maps)
+- Fallback to web maps
+- Restaurant location with details
+
+## 🔐 Environment Variables
+
+### Backend (.env)
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/food_roulette
 PORT=3001
 GOOGLE_PLACES_API_KEY=your_api_key_here
 CORS_ORIGIN=http://localhost:19006
 ```
 
-5. Veritabanını oluşturun ve migrate edin:
-```bash
-npx prisma migrate dev
-npx prisma generate
+### Frontend
+No environment variables needed. API URL is configured in `src/services/api.ts`.
+
+## 📝 Development
+
+### Project Structure
+```
+food-roulette/
+├── backend/          # Node.js backend
+│   ├── src/
+│   │   ├── routes/   # API routes
+│   │   ├── services/ # Business logic
+│   │   └── index.ts  # Entry point
+│   └── prisma/       # Database schema
+├── frontend/         # React Native app
+│   └── src/
+│       ├── screens/  # App screens
+│       └── services/  # API & storage services
+└── docker-compose.yml
 ```
 
-6. Backend'i başlatın:
+### Running in Development
+
+**Backend:**
 ```bash
+cd backend
 npm run dev
 ```
 
-#### Frontend
-
-1. Frontend klasörüne gidin:
+**Frontend:**
 ```bash
 cd frontend
-```
-
-2. Bağımlılıkları yükleyin:
-```bash
-npm install
-```
-
-3. Uygulamayı başlatın:
-```bash
 npm start
 ```
 
-4. Expo Go uygulaması ile QR kodu tarayın veya emülatörde çalıştırın.
+## 🐛 Troubleshooting
 
-## 📱 Kullanım
+### Common Issues
 
-1. Uygulamayı açın ve konum izni verin
-2. Mesafe seçin (500m, 1km, 2km, 5km)
-3. İsteğe bağlı olarak kategori filtresi uygulayın
-4. "Restoranları Bul" butonuna tıklayın
-5. Ruleti çevirin ve seçilen restoranı görün!
+**Google Places API errors:**
+- Ensure API key is valid and Places API is enabled
+- Check API quotas and billing
 
-## 🗄️ Veritabanı Yapısı
+**Database connection issues:**
+- Verify PostgreSQL is running
+- Check DATABASE_URL in .env
 
-- **Restaurant**: Restoran bilgileri
-- **Category**: Yemek kategorileri
-- **RestaurantCategory**: Restoran-kategori ilişkisi
+**Expo connection issues:**
+- Ensure backend is running on port 3001
+- Check CORS_ORIGIN matches Expo URL
 
-## 🔧 API Endpoints
-
-### Restoranlar
-- `GET /api/restaurants/nearby` - Yakındaki restoranları ara
-- `GET /api/restaurants` - Filtrelenmiş restoranları getir
-- `GET /api/restaurants/:id` - Tek restoran detayı
-
-### Kategoriler
-- `GET /api/categories` - Tüm kategorileri getir
-- `GET /api/categories/:id` - Kategori detayı
-
-## 📝 Notlar
-
-- Google Places API key'i almak için [Google Cloud Console](https://console.cloud.google.com/) üzerinden Places API'yi etkinleştirin
-- İlk çalıştırmada restoranlar Google Places API'den çekilir ve veritabanına kaydedilir
-- Sonraki aramalarda veritabanından hızlıca getirilir
-
-## 🎨 Teknolojiler
-
-- **Backend**: Node.js, Express, TypeScript, Prisma, PostgreSQL
-- **Frontend**: React Native, Expo, TypeScript
-- **API**: Google Places API
-- **Containerization**: Docker, Docker Compose
-
-## 📚 Dokümantasyon
-
-- [DOCKER.md](./DOCKER.md) - Docker ile çalıştırma rehberi
-- [SETUP.md](./SETUP.md) - Detaylı kurulum rehberi
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - App Store/Play Store yayınlama
-- [TESTING.md](./TESTING.md) - Test etme rehberi
-- [ANDROID_STUDIO_GUIDE.md](./ANDROID_STUDIO_GUIDE.md) - Android Studio'da çalıştırma
-- [QUICK_START.md](./QUICK_START.md) - Hızlı başlangıç
-
-## 📄 Lisans
+## 📄 License
 
 MIT
+
+## 👨‍💻 Author
+
+Built with ❤️ for food lovers who can't decide what to eat!
+
+---
+
+**Note**: Make sure to get a Google Places API key from [Google Cloud Console](https://console.cloud.google.com/) and enable the Places API before running the application.
