@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Image,
+  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../App';
 import { storageService } from '../services/storage';
 import { Restaurant } from '../services/api';
+import { getCategoryIcon } from '../utils/categoryIcon';
+import { styles, THEME } from './FavoritesScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Favorites'>;
 
@@ -29,7 +32,6 @@ export default function FavoritesScreen({ navigation }: Props) {
   const loadFavorites = async () => {
     try {
       const data = await storageService.getFavorites();
-      console.log('Loaded favorites:', data.length);
       setFavorites(data);
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -42,205 +44,115 @@ export default function FavoritesScreen({ navigation }: Props) {
     await loadFavorites();
   };
 
-  const getCategoryIcon = (name: string): string => {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('pizza')) return '🍕';
-    if (nameLower.includes('kafe') || nameLower.includes('cafe')) return '☕';
-    if (nameLower.includes('türk') || nameLower.includes('turkish')) return '🥘';
-    if (nameLower.includes('italyan') || nameLower.includes('italian')) return '🍝';
-    if (nameLower.includes('çin') || nameLower.includes('chinese')) return '🥢';
-    if (nameLower.includes('japon') || nameLower.includes('japanese')) return '🍣';
-    if (nameLower.includes('hint') || nameLower.includes('indian')) return '🍛';
-    if (nameLower.includes('fast')) return '🍔';
-    if (nameLower.includes('deniz') || nameLower.includes('seafood')) return '🦞';
-    return '🍽️';
-  };
-
   return (
-    <LinearGradient
-      colors={['#0f0c29', '#302b63', '#24243e']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Arkaplan Gradyanı */}
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f3460']}
+        style={styles.backgroundGradient}
+      />
+
+      {/* --- HEADER --- */}
       <View style={styles.header}>
-        <Text style={styles.title}>Favoriler</Text>
-        <Text style={styles.subtitle}>{favorites.length} restoran</Text>
+        <Text style={styles.title}>Favorilerim</Text>
+        <Text style={styles.subtitle}>
+          {favorites.length > 0 
+            ? `${favorites.length} favori mekanın var` 
+            : 'Henüz favori eklemedin'}
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {favorites.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>❤️</Text>
-            <Text style={styles.emptyText}>Henüz favori yok</Text>
+            <View style={styles.emptyIconContainer}>
+              <MaterialCommunityIcons name="heart-broken" size={60} color={THEME.textSec} />
+            </View>
+            <Text style={styles.emptyText}>Listen Boş</Text>
             <Text style={styles.emptySubtext}>
-              Beğendiğiniz restoranları favorilere ekleyin
+              Beğendiğin restoranları kalp ikonuna basarak buraya ekleyebilirsin ❤️
             </Text>
           </View>
         ) : (
           favorites.map((restaurant) => (
             <TouchableOpacity
               key={restaurant.id}
-              style={styles.favoriteItem}
+              style={styles.card}
               onPress={() => navigation.navigate('Map', { restaurant })}
+              activeOpacity={0.8}
             >
-              {restaurant.photos && restaurant.photos.length > 0 ? (
-                <Image
-                  source={{ uri: restaurant.photos[0] }}
-                  style={styles.favoriteImage}
-                />
-              ) : (
-                <View style={styles.favoriteImagePlaceholder}>
-                  <Text style={styles.favoriteImagePlaceholderText}>
-                    {getCategoryIcon(restaurant.name)}
-                  </Text>
-                </View>
-              )}
+              {/* Resim Alanı */}
+              <View style={styles.imageContainer}>
+                {restaurant.photos && restaurant.photos.length > 0 ? (
+                  <Image
+                    source={{ uri: restaurant.photos[0] }}
+                    style={styles.cardImage}
+                  />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Text style={{fontSize: 24}}>
+                      {getCategoryIcon(restaurant.name)}
+                    </Text>
+                  </View>
+                )}
+              </View>
 
-              <View style={styles.favoriteInfo}>
-                <Text style={styles.favoriteName}>{restaurant.name}</Text>
+              {/* Bilgi Alanı */}
+              <View style={styles.cardContent}>
+                <View style={styles.cardHeaderRow}>
+                   <Text style={styles.restaurantName} numberOfLines={1}>{restaurant.name}</Text>
+                   {restaurant.rating && (
+                     <View style={styles.ratingBadge}>
+                       <MaterialCommunityIcons name="star" size={14} color={THEME.accent} />
+                       <Text style={styles.ratingText}>{restaurant.rating.toFixed(1)}</Text>
+                     </View>
+                   )}
+                </View>
+                
+                {/* Yıldız Gösterimi */}
+                {restaurant.rating !== null && restaurant.rating !== undefined && (
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <MaterialCommunityIcons
+                        key={star}
+                        name={star <= Math.round(restaurant.rating!) ? "star" : "star-outline"}
+                        size={14}
+                        color={THEME.accent}
+                      />
+                    ))}
+                  </View>
+                )}
+
                 {restaurant.address && (
-                  <Text style={styles.favoriteAddress} numberOfLines={1}>
+                  <Text style={styles.addressText} numberOfLines={1}>
                     {restaurant.address}
                   </Text>
                 )}
-                <View style={styles.favoriteMeta}>
-                  {restaurant.rating && (
-                    <Text style={styles.favoriteRating}>
-                      ⭐ {restaurant.rating.toFixed(1)}
-                    </Text>
-                  )}
-                  {restaurant.distance && (
-                    <Text style={styles.favoriteDistance}>
-                      📍 {Math.round(restaurant.distance)}m
-                    </Text>
-                  )}
-                </View>
+                
+                {restaurant.distance && (
+                  <View style={styles.distanceRow}>
+                     <MaterialCommunityIcons name="map-marker-distance" size={14} color={THEME.textSec} />
+                     <Text style={styles.distanceText}>{Math.round(restaurant.distance)}m</Text>
+                  </View>
+                )}
               </View>
 
+              {/* Silme Butonu (Kalp) */}
               <TouchableOpacity
                 style={styles.removeButton}
-                onPress={() => removeFavorite(restaurant)}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  removeFavorite(restaurant);
+                }}
               >
-                <Text style={styles.removeButtonText}>❤️</Text>
+                <MaterialCommunityIcons name="heart" size={24} color={THEME.danger} />
               </TouchableOpacity>
             </TouchableOpacity>
           ))
         )}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 20,
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 100,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'center',
-  },
-  favoriteItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(26, 26, 46, 0.8)',
-    borderRadius: 15,
-    marginBottom: 15,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  favoriteImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
-  },
-  favoriteImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
-  },
-  favoriteImagePlaceholderText: {
-    fontSize: 40,
-  },
-  favoriteInfo: {
-    flex: 1,
-  },
-  favoriteName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  favoriteAddress: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 8,
-  },
-  favoriteMeta: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  favoriteRating: {
-    fontSize: 14,
-    color: '#ffd700',
-    fontWeight: '600',
-  },
-  favoriteDistance: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  removeButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
-  },
-  removeButtonText: {
-    fontSize: 24,
-  },
-});
-

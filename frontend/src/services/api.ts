@@ -84,6 +84,19 @@ export interface Category {
   icon: string | null;
 }
 
+export interface SearchNearbyResponse {
+  restaurants: Restaurant[];
+  wasRandomized?: boolean;
+  totalFound?: number;
+}
+
+export interface RouletteResponse {
+  restaurants: Restaurant[];
+  remainingCount: number;
+  count: number;
+  message?: string;
+}
+
 export const restaurantApi = {
   /**
    * Search for nearby restaurants
@@ -93,7 +106,7 @@ export const restaurantApi = {
     longitude: number,
     radius: number = 1000,
     categoryIds?: string[]
-  ): Promise<Restaurant[]> => {
+  ): Promise<SearchNearbyResponse> => {
     const params: any = {
       lat: latitude,
       lng: longitude,
@@ -105,7 +118,11 @@ export const restaurantApi = {
     }
 
     const response = await api.get('/restaurants/nearby', { params });
-    return response.data.restaurants || [];
+    return {
+      restaurants: response.data.restaurants || [],
+      wasRandomized: response.data.wasRandomized || false,
+      totalFound: response.data.totalFound || response.data.restaurants?.length || 0,
+    };
   },
 
   /**
@@ -135,6 +152,63 @@ export const restaurantApi = {
     const response = await api.get(`/restaurants/${id}`);
     return response.data.restaurant;
   },
+
+  /**
+   * Get random restaurants for roulette wheel
+   * Backend manages excludedIds in session
+   */
+  getRouletteRestaurants: async (
+    latitude: number,
+    longitude: number,
+    radius: number = 5000,
+    limit: number = 30,
+    sessionId?: string
+  ): Promise<RouletteResponse & { sessionId?: string }> => {
+    const params: any = {
+      lat: latitude,
+      lng: longitude,
+      radius: radius,
+      limit: limit,
+    };
+    
+    if (sessionId) {
+      params.sessionId = sessionId;
+    }
+
+    const response = await api.get('/restaurants/roulette', { params });
+    return {
+      restaurants: response.data.restaurants || [],
+      remainingCount: response.data.remainingCount || 0,
+      count: response.data.count || 0,
+      message: response.data.message,
+      sessionId: response.data.sessionId,
+    };
+  },
+
+  /**
+   * Shuffle roulette - get completely random 30 restaurants from backend
+   * Backend handles all data, frontend just requests new random selection
+   */
+  shuffleRoulette: async (
+    latitude: number,
+    longitude: number,
+    radius: number = 5000,
+    limit: number = 30
+  ): Promise<RouletteResponse> => {
+    const response = await api.post('/restaurants/roulette/shuffle', {
+      lat: latitude,
+      lng: longitude,
+      radius,
+      limit,
+    });
+    
+    return {
+      restaurants: response.data.restaurants || [],
+      remainingCount: response.data.remainingCount || 0,
+      count: response.data.count || 0,
+      message: response.data.message,
+    };
+  },
 };
 
 export const categoryApi = {
@@ -156,4 +230,3 @@ export const categoryApi = {
 };
 
 export default api;
-

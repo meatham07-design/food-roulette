@@ -2,271 +2,154 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
+  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../App';
+import { styles, THEME } from './FilterScreen.styles';
+
+// Kategori Listesi ve İkonları
+const CATEGORIES = [
+  { id: 'burger', name: 'Burger', icon: 'hamburger' },
+  { id: 'pizza', name: 'Pizza', icon: 'pizza' },
+  { id: 'kebab', name: 'Kebap', icon: 'food-drumstick' },
+  { id: 'sushi', name: 'Sushi', icon: 'fish' },
+  { id: 'dessert', name: 'Tatlı', icon: 'cupcake' },
+  { id: 'coffee', name: 'Kahve', icon: 'coffee' },
+  { id: 'seafood', name: 'Deniz Ürünleri', icon: 'fish' },
+  { id: 'pasta', name: 'Makarna', icon: 'noodles' },
+  { id: 'steak', name: 'Et / Steak', icon: 'food-steak' },
+  { id: 'vegan', name: 'Vegan', icon: 'leaf' },
+];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Filter'>;
 
-// Statik kategori listesi - Google Places API desteklenen type'lar ve keyword'ler
-// ID'ler backend'deki categoryMap ile eşleşmeli
-const STATIC_CATEGORIES = [
-  // Google Places API desteklenen type'lar
-  { id: 'restaurant', name: 'Restoran', icon: '🍽️' },
-  { id: 'cafe', name: 'Kafe', icon: '☕' },
-  { id: 'bakery', name: 'Fırın', icon: '🥖' },
-  { id: 'meal_takeaway', name: 'Paket Servis', icon: '🥡' },
-  { id: 'meal_delivery', name: 'Sipariş', icon: '🚚' },
-  { id: 'bar', name: 'Bar', icon: '🍺' },
-  // Keyword ile arama yapılacak kategoriler (type: restaurant, keyword: spesifik)
-  { id: 'pizza', name: 'Pizza', icon: '🍕' },
-  { id: 'italian', name: 'İtalyan', icon: '🍝' },
-  { id: 'chinese', name: 'Çin', icon: '🥢' },
-  { id: 'japanese', name: 'Japon', icon: '🍣' },
-  { id: 'korean', name: 'Kore', icon: '🍜' },
-  { id: 'mexican', name: 'Meksika', icon: '🌮' },
-  { id: 'indian', name: 'Hint', icon: '🍛' },
-  { id: 'thai', name: 'Tayland', icon: '🍲' },
-  { id: 'turkish', name: 'Türk', icon: '🥘' },
-  { id: 'fast_food', name: 'Fast Food', icon: '🍔' },
-  { id: 'seafood', name: 'Deniz Ürünleri', icon: '🦞' },
-  { id: 'steak_house', name: 'Et Restoranı', icon: '🥩' },
-  { id: 'vegetarian', name: 'Vejetaryen', icon: '🥗' },
-  { id: 'vegan', name: 'Vegan', icon: '🌱' },
-];
-
-export default function FilterScreen({ route, navigation }: Props) {
-  const { onApplyFilters } = route.params;
+export default function FilterScreen({ navigation, route }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const handleCategoryToggle = (categoryId: string) => {
-    setSelectedCategories(prev => {
-      if (prev.includes(categoryId)) {
-        // Remove if already selected
-        return prev.filter(id => id !== categoryId);
-      } else {
-        // Add if not selected
-        return [...prev, categoryId];
-      }
-    });
+  const toggleCategory = (id: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
   };
 
-  const handleApply = () => {
-    const selected = STATIC_CATEGORIES.filter(c => selectedCategories.includes(c.id));
-    onApplyFilters({
-      categories: selected.map(c => c.name),
-      categoryIds: selectedCategories,
-    });
+  const applyFilters = () => {
+    // Seçili kategorilerin isimlerini bul
+    const selectedNames = CATEGORIES
+      .filter(c => selectedCategories.includes(c.id))
+      .map(c => c.name);
+
+    // Home ekranına parametreleri geri gönder
+    if (route.params?.onApplyFilters) {
+      route.params.onApplyFilters({
+        categoryIds: selectedCategories,
+        categories: selectedNames
+      });
+    }
     navigation.goBack();
   };
 
-  const handleClear = () => {
+  const clearFilters = () => {
     setSelectedCategories([]);
-    onApplyFilters({
-      categories: [],
-      categoryIds: [],
-    });
-    navigation.goBack();
   };
 
   return (
-    <LinearGradient colors={['#0f0c29', '#302b63', '#24243e']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Kategori Seç</Text>
-          <Text style={styles.subtitle}>
-            Hangi tür yemek istiyorsun?
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Arkaplan Gradyanı */}
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f3460']}
+        style={styles.backgroundGradient}
+      />
+
+      {/* --- HEADER --- */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Filtreler</Text>
+          <Text style={styles.subtitle}>Canın tam olarak ne çekiyor?</Text>
+        </View>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.closeButton}
+        >
+          <MaterialCommunityIcons name="close" size={24} color={THEME.textMain} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Bilgi Kartı */}
+        <View style={styles.infoCard}>
+          <MaterialCommunityIcons name="information-outline" size={20} color={THEME.accent} style={{marginRight: 10}} />
+          <Text style={styles.infoText}>
+            Birden fazla kategori seçebilirsin. Hiçbir şey seçmezsen "Tümü" aranır.
           </Text>
+        </View>
 
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoText}>
-              {selectedCategories.length > 0 
-                ? `${selectedCategories.length} kategori seçildi`
-                : 'Birden fazla kategori seçebilirsiniz'}
-            </Text>
-          </View>
-
-          {STATIC_CATEGORIES.map((category) => {
-            const isSelected = selectedCategories.includes(category.id);
+        {/* Kategoriler Grid */}
+        <View style={styles.categoriesGrid}>
+          {CATEGORIES.map((item) => {
+            const isSelected = selectedCategories.includes(item.id);
             return (
               <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  isSelected && styles.categoryButtonActive,
-                ]}
-                onPress={() => handleCategoryToggle(category.id)}
+                key={item.id}
+                style={[styles.categoryCard, isSelected && styles.categoryCardActive]}
+                onPress={() => toggleCategory(item.id)}
+                activeOpacity={0.7}
               >
-                <View style={styles.categoryButtonContent}>
-                  <View style={styles.categoryButtonLeft}>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                      {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                    </View>
-                    <Text
-                      style={[
-                        styles.categoryButtonText,
-                        isSelected && styles.categoryButtonTextActive,
-                      ]}
-                    >
-                      {category.icon} {category.name}
-                    </Text>
-                  </View>
+                <View style={[styles.iconContainer, isSelected && styles.iconContainerActive]}>
+                  <MaterialCommunityIcons 
+                    name={item.icon as any} 
+                    size={24} 
+                    color={isSelected ? '#1a1a2e' : THEME.textMain} 
+                  />
                 </View>
+                <Text style={[styles.categoryName, isSelected && styles.categoryNameActive]}>
+                  {item.name}
+                </Text>
+                
+                {/* Seçim İkonu (Check) */}
+                {isSelected && (
+                  <View style={styles.checkBadge}>
+                    <MaterialCommunityIcons name="check" size={12} color="#fff" />
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClear}
-            >
-              <Text style={styles.clearButtonText}>Temizle</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={handleApply}
-            >
-              <Text style={styles.applyButtonText}>Uygula</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
-    </LinearGradient>
+
+      {/* --- FOOTER BUTONLARI --- */}
+      <View style={styles.footer}>
+        <TouchableOpacity 
+          style={styles.clearButton} 
+          onPress={clearFilters}
+        >
+          <Text style={styles.clearButtonText}>Temizle</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.applyButton} 
+          onPress={applyFilters}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={[THEME.accent, '#FFA500']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.applyButtonGradient}
+          >
+            <Text style={styles.applyButtonText}>Uygula ({selectedCategories.length})</Text>
+            <MaterialCommunityIcons name="arrow-right" size={20} color="#1a1a2e" style={{marginLeft: 5}} />
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  infoContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  infoText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  categoryButton: {
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
-    padding: 18,
-    borderRadius: 15,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  categoryButtonActive: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderColor: '#ffd700',
-  },
-  categoryButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  categoryButtonLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  checkboxActive: {
-    backgroundColor: '#ffd700',
-    borderColor: '#ffd700',
-  },
-  checkmark: {
-    color: '#1a1a2e',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  categoryButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-  },
-  categoryButtonTextActive: {
-    color: '#ffd700',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 15,
-    marginTop: 30,
-  },
-  clearButton: {
-    flex: 1,
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
-    padding: 18,
-    borderRadius: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  clearButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  applyButton: {
-    flex: 1,
-    backgroundColor: '#1a1a2e',
-    padding: 18,
-    borderRadius: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffd700',
-    shadowColor: '#ffd700',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  applyButtonText: {
-    color: '#ffd700',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
-

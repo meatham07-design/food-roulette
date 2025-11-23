@@ -2,19 +2,23 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Image,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../App';
 import { storageService, HistoryItem } from '../services/storage';
 import { Restaurant } from '../services/api';
+import { getCategoryIcon } from '../utils/categoryIcon';
+import { formatDate } from '../utils/formatters';
+import { styles, THEME } from './HistoryScreen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'History'>;
 
@@ -71,52 +75,35 @@ export default function HistoryScreen({ navigation }: Props) {
     );
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return 'Az önce';
-    if (minutes < 60) return `${minutes} dakika önce`;
-    if (hours < 24) return `${hours} saat önce`;
-    if (days < 7) return `${days} gün önce`;
-    return date.toLocaleDateString('tr-TR');
-  };
-
-  const getCategoryIcon = (name: string): string => {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('pizza')) return '🍕';
-    if (nameLower.includes('kafe') || nameLower.includes('cafe')) return '☕';
-    if (nameLower.includes('türk') || nameLower.includes('turkish')) return '🥘';
-    if (nameLower.includes('italyan') || nameLower.includes('italian')) return '🍝';
-    if (nameLower.includes('çin') || nameLower.includes('chinese')) return '🥢';
-    if (nameLower.includes('japon') || nameLower.includes('japanese')) return '🍣';
-    if (nameLower.includes('hint') || nameLower.includes('indian')) return '🍛';
-    if (nameLower.includes('fast')) return '🍔';
-    if (nameLower.includes('deniz') || nameLower.includes('seafood')) return '🦞';
-    return '🍽️';
-  };
 
   return (
-    <LinearGradient
-      colors={['#0f0c29', '#302b63', '#24243e']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f3460']}
+        style={styles.backgroundGradient}
+      />
+
       <View style={styles.header}>
-        <Text style={styles.title}>Geçmiş</Text>
+        <View>
+          <Text style={styles.title}>Geçmiş</Text>
+          <Text style={styles.subtitle}>{history.length} kayıt</Text>
+        </View>
         {history.length > 0 && (
           <TouchableOpacity onPress={clearHistory} style={styles.clearButton}>
+            <MaterialCommunityIcons name="delete-outline" size={16} color="#fff" />
             <Text style={styles.clearButtonText}>Temizle</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {history.length === 0 ? (
           <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconContainer}>
+              <MaterialCommunityIcons name="history" size={50} color={THEME.textSec} />
+            </View>
             <Text style={styles.emptyText}>Henüz geçmiş yok</Text>
             <Text style={styles.emptySubtext}>
               Rulet çevirdiğinizde seçilen restoranlar burada görünecek
@@ -130,186 +117,89 @@ export default function HistoryScreen({ navigation }: Props) {
             return (
               <TouchableOpacity
                 key={`${restaurant.id}-${index}`}
-                style={styles.historyItem}
+                style={styles.card}
                 onPress={() => navigation.navigate('Map', { restaurant })}
+                activeOpacity={0.7}
               >
-                {restaurant.photos && restaurant.photos.length > 0 ? (
-                  <Image
-                    source={{ uri: restaurant.photos[0] }}
-                    style={styles.historyImage}
-                  />
-                ) : (
-                  <View style={styles.historyImagePlaceholder}>
-                    <Text style={styles.historyImagePlaceholderText}>
-                      {getCategoryIcon(restaurant.name)}
-                    </Text>
-                  </View>
-                )}
+                {/* Resim */}
+                <View style={styles.imageContainer}>
+                  {restaurant.photos && restaurant.photos.length > 0 ? (
+                    <Image
+                      source={{ uri: restaurant.photos[0] }}
+                      style={styles.cardImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <Text style={{ fontSize: 30 }}>
+                        {getCategoryIcon(restaurant.name)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
-                <View style={styles.historyInfo}>
-                  <Text style={styles.historyName}>{restaurant.name}</Text>
+                {/* İçerik */}
+                <View style={styles.cardContent}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.restaurantName} numberOfLines={1}>
+                      {restaurant.name}
+                    </Text>
+                    {restaurant.rating && (
+                      <View style={styles.ratingBadge}>
+                        <MaterialCommunityIcons name="star" size={12} color={THEME.accent} />
+                        <Text style={styles.ratingText}>
+                          {restaurant.rating.toFixed(1)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  
                   {restaurant.address && (
-                    <Text style={styles.historyAddress} numberOfLines={1}>
+                    <Text style={styles.addressText} numberOfLines={1}>
                       {restaurant.address}
                     </Text>
                   )}
-                  <View style={styles.historyMeta}>
-                    {restaurant.rating && (
-                      <Text style={styles.historyRating}>
-                        ⭐ {restaurant.rating.toFixed(1)}
+                  
+                  <View style={styles.cardFooterRow}>
+                    <View style={styles.dateContainer}>
+                      <MaterialCommunityIcons name="clock-outline" size={12} color={THEME.textSec} />
+                      <Text style={styles.dateText}>
+                        {formatDate(item.selectedAt)}
                       </Text>
-                    )}
+                    </View>
                     {restaurant.distance && (
-                      <Text style={styles.historyDistance}>
-                        📍 {Math.round(restaurant.distance)}m
-                      </Text>
+                      <View style={[styles.dateContainer, { marginLeft: 12 }]}>
+                        <MaterialCommunityIcons name="map-marker-distance" size={12} color={THEME.textSec} />
+                        <Text style={styles.dateText}>
+                          {Math.round(restaurant.distance)}m
+                        </Text>
+                      </View>
                     )}
                   </View>
-                  <Text style={styles.historyDate}>
-                    {formatDate(item.selectedAt)}
-                  </Text>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.favoriteButton}
-                  onPress={() => toggleFavorite(restaurant)}
-                >
-                  <Text style={styles.favoriteIcon}>
-                    {isFavorite ? '❤️' : '🤍'}
-                  </Text>
-                </TouchableOpacity>
+                {/* Favori Butonu */}
+                <View style={styles.actionsContainer}>
+                  <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(restaurant);
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name={isFavorite ? "heart" : "heart-outline"}
+                      size={24}
+                      color={isFavorite ? THEME.danger : THEME.textSec}
+                    />
+                  </TouchableOpacity>
+                </View>
               </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  clearButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ffd700',
-  },
-  clearButtonText: {
-    color: '#ffd700',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 100,
-  },
-  emptyText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'center',
-  },
-  historyItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(26, 26, 46, 0.8)',
-    borderRadius: 15,
-    marginBottom: 15,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  historyImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
-  },
-  historyImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
-  },
-  historyImagePlaceholderText: {
-    fontSize: 40,
-  },
-  historyInfo: {
-    flex: 1,
-  },
-  historyName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  historyAddress: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 8,
-  },
-  historyMeta: {
-    flexDirection: 'row',
-    gap: 15,
-    marginBottom: 5,
-  },
-  historyRating: {
-    fontSize: 14,
-    color: '#ffd700',
-    fontWeight: '600',
-  },
-  historyDistance: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  historyDate: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.5)',
-  },
-  favoriteButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
-  },
-  favoriteIcon: {
-    fontSize: 24,
-  },
-});
 

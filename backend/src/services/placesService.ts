@@ -31,6 +31,7 @@ const GOOGLE_PLACES_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
 export class PlacesService {
   /**
    * Search for nearby restaurants using Google Places API
+   * Returns up to 30 results using pagination if needed
    */
   async searchNearbyRestaurants(
     latitude: number,
@@ -63,13 +64,52 @@ export class PlacesService {
     }
 
     try {
-      const response = await axios.get<PlacesSearchResponse>(url, { params });
+      const allResults: GooglePlace[] = [];
+      let nextPageToken: string | undefined = undefined;
+      let pageCount = 0;
+      const maxPages = 3; // Google Places API limit: max 3 pages per search = 60 results total (20 per page)
 
-      if (response.data.status === 'OK' || response.data.status === 'ZERO_RESULTS') {
-        return response.data.results || [];
-      } else {
-        throw new Error(`Google Places API error: ${response.data.status}`);
-      }
+      // TÜM SAYFALARI AL - Google API limiti dahilinde maksimum sonuçları çek
+      do {
+        if (nextPageToken) {
+          // Google API requirement: next_page_token kullanmadan önce 2 saniye bekle
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          params.pagetoken = nextPageToken;
+        }
+
+        const response = await axios.get<PlacesSearchResponse>(url, { params });
+
+        if (response.data.status === 'OK') {
+          allResults.push(...(response.data.results || []));
+          nextPageToken = (response.data as any).next_page_token;
+          pageCount++;
+
+          // Eğer next_page_token yoksa, daha fazla sayfa yok demektir
+          if (!nextPageToken) {
+            break;
+          }
+        } else if (response.data.status === 'ZERO_RESULTS') {
+          break;
+        } else {
+          // Hata durumunda, eğer en az bir sayfa aldıysak mevcut sonuçları döndür
+          if (pageCount > 0) {
+            console.warn(`Google Places API warning: ${response.data.status}, returning ${allResults.length} results`);
+            break;
+          }
+          throw new Error(`Google Places API error: ${response.data.status}`);
+        }
+
+        // Clear pagetoken from params for next iteration
+        delete params.pagetoken;
+      } while (nextPageToken && pageCount < maxPages);
+
+      console.log(`✅ Fetched ${allResults.length} results from ${pageCount} page(s)`);
+
+      // Sadece gerçek restoranları filtrele (kuyumcu, okul, market vb. hariç)
+      const filteredResults = this.filterRestaurantsOnly(allResults);
+      console.log(`🍽️ Filtered to ${filteredResults.length} restaurants (removed ${allResults.length - filteredResults.length} non-restaurant places)`);
+
+      return filteredResults;
     } catch (error) {
       console.error('Error fetching places:', error);
       throw error;
@@ -178,6 +218,90 @@ export class PlacesService {
 
 
     return restaurant;
+  }
+
+  /**
+   * Filter results to only include actual restaurants/food places
+   * Excludes: jewelry_store, school, store, bank, etc.
+   */
+  private filterRestaurantsOnly(places: GooglePlace[]): GooglePlace[] {
+    // Sadece yemek/restoran ile ilgili type'ları kabul et
+    const validRestaurantTypes = [
+      'restaurant',
+      'cafe',
+      'bakery',
+      'bar',
+      'meal_takeaway',
+      'meal_delivery',
+      'food',
+      'establishment', // Bazı restoranlar sadece 'establishment' olarak geliyor, ama name'de kontrol edeceğiz
+    ];
+
+    // Hariç tutulacak type'lar (restoran değil)
+    const excludedTypes = [
+      'jewelry_store', 'school', 'primary_school', 'secondary_school', 'university',
+      'store', 'supermarket', 'convenience_store', 'clothing_store', 'electronics_store',
+      'furniture_store', 'home_goods_store', 'shoe_store', 'department_store',
+      'bank', 'atm', 'finance', 'accounting',
+      'pharmacy', 'hospital', 'doctor', 'dentist', 'physiotherapist',
+      'gas_station', 'car_repair', 'car_dealer', 'car_rental', 'car_wash', 'parking',
+      'lodging', 'hotel',
+      'real_estate_agency', 'lawyer', 'insurance_agency',
+      'beauty_salon', 'hair_care', 'spa', 'gym',
+      'church', 'mosque', 'synagogue', 'hindu_temple', 'place_of_worship',
+      'cemetery', 'funeral_home',
+      'post_office', 'police', 'fire_station', 'local_government_office',
+      'city_hall', 'courthouse', 'library', 'school_district',
+      'museum', 'art_gallery', 'zoo', 'amusement_park', 'park',
+      'stadium', 'travel_agency', 'transit_station', 'airport',
+      'general_contractor', 'electrician', 'plumber', 'roofing_contractor'
+    ];
+
+    const excludedNameKeywords = [
+      'okul', 'lise', 'ilköğretim', 'kolej', 'college', 'school', 'dershane', 'kurs', 'eğitim',
+      'kuyumcu', 'jewelry', 'gold', 'altın', 'gümüş',
+      'eczane', 'pharmacy', 'medikal', 'optik', 'hastane', 'sağlık',
+      'market', 'bakkal', 'süpermarket', 'tekel', 'büfe', 'kuruyemiş',
+      'bank', 'banka', 'atm',
+      'otel', 'hotel', 'pansiyon', 'konukevi', 'apart',
+      'kırtasiye', 'iletişim', 'telekom', 'turkcell', 'vodafone', 'türk telekom',
+      'kuaför', 'berber', 'güzellik', 'ofis', 'kırtasiye', 'sanayi',
+      'derneği', 'vakfı', 'müdürlüğü', 'belediyesi'
+    ];
+
+    return places.filter(place => {
+      // A. Business Status Kontrolü (API response içinde varsa)
+      // Google Places API bazen 'business_status' döndürür.
+      if ((place as any).business_status === 'CLOSED_TEMPORARILY' || (place as any).business_status === 'CLOSED_PERMANENTLY') {
+        return false;
+      }
+
+      const types = place.types || [];
+      const name = place.name?.toLowerCase() || '';
+
+      // B. Tip Bazlı Eleme (Blacklist Check)
+      const hasExcludedType = types.some(type => excludedTypes.includes(type));
+      if (hasExcludedType) return false;
+
+      // C. İsim Bazlı Eleme (Name Blacklist Check)
+      // Kelimenin tam eşleşmesi veya içinde geçmesi durumunu kontrol et
+      const hasExcludedName = excludedNameKeywords.some(keyword => name.includes(keyword));
+      if (hasExcludedName) return false;
+
+      // D. Geçerli Tip Kontrolü (Whitelist Check)
+      // En az bir geçerli restoran tipi içermeli
+      const hasValidType = types.some(type => validRestaurantTypes.includes(type));
+
+      if (hasValidType) return true;
+
+      // E. Eğer geçerli tip yoksa ama 'establishment' varsa ve ismi çok bariz restoransa (Fallback)
+      if (types.includes('establishment')) {
+        const restaurantKeywords = ['restoran', 'restaurant', 'cafe', 'kafe', 'lokanta', 'kebap', 'döner', 'pide', 'köfte', 'burger', 'pizza', 'meyhane', 'bistro', 'steak'];
+        return restaurantKeywords.some(keyword => name.includes(keyword));
+      }
+
+      return false;
+    });
   }
 
   /**
