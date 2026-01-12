@@ -3,16 +3,18 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: yemek-ruleti-db
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: yemekruleti
-      POSTGRES_PASSWORD: yemekruleti123
-      POSTGRES_DB: yemek_ruleti
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yemekruleti -d yemek_ruleti"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,12 +27,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: yemek-ruleti-backend
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://yemekruleti:yemekruleti123@postgres:5432/yemek_ruleti?schema=public
-      PORT: 3001
-      GOOGLE_PLACES_API_KEY: "AIzaSyDUVbsM9I9JFLASREjqznFBN3AGDk7CL-4"
-      CORS_ORIGIN: http://localhost:19006,http://localhost:19000,http://localhost:19001
-      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: ${PORT}
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      NODE_ENV: ${NODE_ENV}
     ports:
       - "3001:3001"
     volumes:
